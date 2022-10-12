@@ -11,7 +11,7 @@ from typing import List
 
 
 app_name = "git_status_report.py"
-app_version = "220829.1"
+app_version = "221011.1"
 
 do_print_git_output = False
 
@@ -66,7 +66,7 @@ class GitStatusReport:
                 if result.stdout is not None:
                     err_new.append(f"STDOUT:\n{result.stdout}\n")
 
-        if 0 < len(err_new):
+        if err_new:
             rpt_new += err_new
             err_new.insert(0, f"ERRORS in 'get_git_status' for '{git_path}'")
 
@@ -99,7 +99,7 @@ class GitStatusReport:
                 if result.stdout is not None:
                     err_new.append(f"STDOUT:\n{result.stdout}\n")
 
-        if 0 < len(err_new):
+        if err_new:
             rpt_new += err_new
             err_new.insert(
                 0,
@@ -126,7 +126,7 @@ class GitStatusReport:
             err_new.append("ERROR: Failed to run git command.")
         else:
             if result.returncode == 0:
-                remotes = [s for s in result.stdout.split("\n") if 0 < len(s)]
+                remotes = [s for s in result.stdout.split("\n") if s]
                 for remote in remotes:
                     self.get_git_remote(git_path, remote)
             else:
@@ -136,7 +136,7 @@ class GitStatusReport:
                 if result.stdout is not None:
                     err_new.append(f"STDOUT:\n{result.stdout}\n")
 
-        if 0 < len(err_new):
+        if err_new:
             rpt_new += err_new
             err_new.insert(
                 0,
@@ -181,7 +181,7 @@ def run_git(run_dir, args) -> subprocess.CompletedProcess:
 def get_args(argv):
     ap = argparse.ArgumentParser(
         description="Create a simple status report for Git repositories "
-        + "under a given path."
+        "under a given path."
     )
 
     ap.add_argument(
@@ -264,21 +264,21 @@ def main(argv):
     rpt = process_repos(dir_path)
 
     s = rpt.msg_text()
-    if 0 < len(s):
+    if s:
         s = f"{'-' * 70}\nMESSAGES:\n\n{s}\n\n"
         print(s)
 
     t = rpt.err_text()
-    if 0 < len(t):
+    if t:
         t = f"{'-' * 70}\nERRORS:\n\n{t}\n\n"
         print(t)
 
     if rpt.repos_found:
         print(f"\nWriting '{out_path}'.")
         with open(out_path, "w") as f:
-            if 0 < len(s):
+            if s:
                 f.write(s)
-            if 0 < len(t):
+            if t:
                 f.write(t)
             f.write(rpt.rpt_text())
     else:
