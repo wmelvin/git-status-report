@@ -16,22 +16,15 @@ def test_git_status(tmp_path: Path):
     file_a = work_repo / "a.txt"
     file_a.write_text("Hey, everyone!")
 
-    assert git_status_report.run_git(
-        work_repo, ["init", "-b", "main"]
-    ).returncode == 0
+    assert git_status_report.run_git(work_repo, ["init", "-b", "main"]).returncode == 0
 
-    assert work_repo.joinpath('.git').exists()
+    assert work_repo.joinpath(".git").exists()
 
     result = git_status_report.run_git(work_repo, ["status"])
     assert result.returncode == 0
     assert "Untracked" in result.stdout
 
-    args = [
-        "git_status_report.py",
-        str(work_repo),
-        "--output",
-        "z-test-git-status.txt"
-    ]
+    args = [str(work_repo), "--output", "z-test-git-status.txt"]
 
     ec = git_status_report.main(args)
 
@@ -46,48 +39,63 @@ def test_git_w_1_remote(tmp_path: Path):
     file_a = work_repo / "a.txt"
     file_a.write_text("Hey, everyone!")
 
-    assert git_status_report.run_git(
-        work_repo, ["init", "-b", "main"]
-    ).returncode == 0
-    assert work_repo.joinpath('.git').exists()
+    assert git_status_report.run_git(work_repo, ["init", "-b", "main"]).returncode == 0
+    assert work_repo.joinpath(".git").exists()
 
-    assert git_status_report.run_git(
-        work_repo, ["add", "a.txt"]
-    ).returncode == 0
+    assert git_status_report.run_git(work_repo, ["add", "a.txt"]).returncode == 0
 
-    result = git_status_report.run_git(
-        work_repo, ["status"]
-    )
+    result = git_status_report.run_git(work_repo, ["status"])
     assert result.returncode == 0
     assert "Untracked" not in result.stdout
 
-    assert git_status_report.run_git(
-        work_repo, ["commit", "-m", '"Initial commit."']
-    ).returncode == 0
+    #  Git user.name and user.email must be configured for commit.
+    assert (
+        git_status_report.run_git(
+            work_repo, ["config", "user.name", "Test User"]
+        ).returncode
+        == 0
+    )
+    assert (
+        git_status_report.run_git(
+            work_repo, ["config", "user.email", "test@example.com"]
+        ).returncode
+        == 0
+    )
+
+    assert (
+        git_status_report.run_git(
+            work_repo, ["commit", "-m", '"Initial commit."']
+        ).returncode
+        == 0
+    )
 
     remote_repo = tmp_path / "b.git"
     remote_repo.mkdir()
     assert remote_repo.exists()
 
-    assert git_status_report.run_git(
-        remote_repo, ["init", "-b", "main", "--bare"]
-    ).returncode == 0
-    assert remote_repo.joinpath('HEAD').exists()
+    assert (
+        git_status_report.run_git(
+            remote_repo, ["init", "-b", "main", "--bare"]
+        ).returncode
+        == 0
+    )
+    assert remote_repo.joinpath("HEAD").exists()
 
-    assert git_status_report.run_git(
-        work_repo, ["remote", "add", "origin", str(remote_repo)]
-    ).returncode == 0
+    assert (
+        git_status_report.run_git(
+            work_repo, ["remote", "add", "origin", str(remote_repo)]
+        ).returncode
+        == 0
+    )
 
-    assert git_status_report.run_git(
-        work_repo, ["push", "-u", "origin", "main"]
-    ).returncode == 0
+    assert (
+        git_status_report.run_git(
+            work_repo, ["push", "-u", "origin", "main"]
+        ).returncode
+        == 0
+    )
 
-    args = [
-        "git_status_report.py",
-        str(work_repo),
-        "-o",
-        "z-test-git-w-1-remote.txt"
-    ]
+    args = [str(work_repo), "-o", "z-test-git-w-1-remote.txt"]
     ec = git_status_report.main(args)
 
     assert ec == 0
@@ -101,24 +109,35 @@ def test_git_w_2_remotes(tmp_path: Path):
     file_a = work_repo / "a.txt"
     file_a.write_text("Hey, everyone!")
 
-    assert git_status_report.run_git(
-        work_repo, ["init", "-b", "main"]
-    ).returncode == 0
-    assert work_repo.joinpath('.git').exists()
+    assert git_status_report.run_git(work_repo, ["init", "-b", "main"]).returncode == 0
+    assert work_repo.joinpath(".git").exists()
 
-    assert git_status_report.run_git(
-        work_repo, ["add", "a.txt"]
-    ).returncode == 0
+    assert git_status_report.run_git(work_repo, ["add", "a.txt"]).returncode == 0
 
-    result = git_status_report.run_git(
-        work_repo, ["status"]
-    )
+    result = git_status_report.run_git(work_repo, ["status"])
     assert result.returncode == 0
     assert "Untracked" not in result.stdout
 
-    assert git_status_report.run_git(
-        work_repo, ["commit", "-m", '"Initial commit."']
-    ).returncode == 0
+    #  Git user.name and user.email must be configured for commit.
+    assert (
+        git_status_report.run_git(
+            work_repo, ["config", "user.name", "Test User"]
+        ).returncode
+        == 0
+    )
+    assert (
+        git_status_report.run_git(
+            work_repo, ["config", "user.email", "test@example.com"]
+        ).returncode
+        == 0
+    )
+
+    assert (
+        git_status_report.run_git(
+            work_repo, ["commit", "-m", '"Initial commit."']
+        ).returncode
+        == 0
+    )
 
     #  First remote.
 
@@ -126,18 +145,25 @@ def test_git_w_2_remotes(tmp_path: Path):
     remote_1.mkdir()
     assert remote_1.exists()
 
-    assert git_status_report.run_git(
-        remote_1, ["init", "-b", "main", "--bare"]
-    ).returncode == 0
-    assert remote_1.joinpath('HEAD').exists()
+    assert (
+        git_status_report.run_git(remote_1, ["init", "-b", "main", "--bare"]).returncode
+        == 0
+    )
+    assert remote_1.joinpath("HEAD").exists()
 
-    assert git_status_report.run_git(
-        work_repo, ["remote", "add", "origin", str(remote_1)]
-    ).returncode == 0
+    assert (
+        git_status_report.run_git(
+            work_repo, ["remote", "add", "origin", str(remote_1)]
+        ).returncode
+        == 0
+    )
 
-    assert git_status_report.run_git(
-        work_repo, ["push", "-u", "origin", "main"]
-    ).returncode == 0
+    assert (
+        git_status_report.run_git(
+            work_repo, ["push", "-u", "origin", "main"]
+        ).returncode
+        == 0
+    )
 
     #  Second remote.
 
@@ -145,25 +171,27 @@ def test_git_w_2_remotes(tmp_path: Path):
     remote_2.mkdir()
     assert remote_2.exists()
 
-    assert git_status_report.run_git(
-        remote_2, ["init", "-b", "main", "--bare"]
-    ).returncode == 0
-    assert remote_2.joinpath('HEAD').exists()
+    assert (
+        git_status_report.run_git(remote_2, ["init", "-b", "main", "--bare"]).returncode
+        == 0
+    )
+    assert remote_2.joinpath("HEAD").exists()
 
-    assert git_status_report.run_git(
-        work_repo, ["remote", "add", "backup", str(remote_2)]
-    ).returncode == 0
+    assert (
+        git_status_report.run_git(
+            work_repo, ["remote", "add", "backup", str(remote_2)]
+        ).returncode
+        == 0
+    )
 
-    assert git_status_report.run_git(
-        work_repo, ["push", "-u", "backup", "main"]
-    ).returncode == 0
+    assert (
+        git_status_report.run_git(
+            work_repo, ["push", "-u", "backup", "main"]
+        ).returncode
+        == 0
+    )
 
-    args = [
-        "git_status_report.py",
-        str(work_repo),
-        "-o",
-        "z-test-git-w-2-remotes.txt"
-    ]
+    args = [str(work_repo), "-o", "z-test-git-w-2-remotes.txt"]
     ec = git_status_report.main(args)
 
     assert ec == 0

@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 import argparse
 import shutil
 import subprocess
 import sys
-
 from datetime import datetime
 from pathlib import Path
-from typing import List
-
 
 app_name = "git_status_report.py"
-app_version = "221011.1"
+
+app_version = "2024.01.1"
 
 do_print_git_output = False
 
@@ -20,9 +20,9 @@ run_dt = datetime.now()
 
 class GitStatusReport:
     def __init__(self) -> None:
-        self.rpt_lines: List = []
-        self.msg_lines: List = []
-        self.err_lines: List = []
+        self.rpt_lines: list = []
+        self.msg_lines: list = []
+        self.err_lines: list = []
         self.repos_found: bool = False
 
     def rpt_text(self) -> str:
@@ -34,7 +34,7 @@ class GitStatusReport:
     def err_text(self) -> str:
         return "\n".join(self.err_lines)
 
-    def get_git_status(self, git_path: Path):
+    def get_git_status(self, git_path: Path) -> None:
         STATUS_CLEAN = "nothing to commit, working tree clean"
 
         rpt_new = []
@@ -54,17 +54,16 @@ class GitStatusReport:
 
         if result is None:
             err_new.append("ERROR: Failed to run git command.")
+        elif result.returncode == 0:
+            rpt_new.append(result.stdout)
+            if STATUS_CLEAN not in result.stdout:
+                msg_new.append(f"Repo '{repo_path}' has changes.")
         else:
-            if result.returncode == 0:
-                rpt_new.append(result.stdout)
-                if STATUS_CLEAN not in result.stdout:
-                    msg_new.append(f"Repo '{repo_path}' has changes.")
-            else:
-                err_new.append(f"ERROR ({result.returncode})")
-                if result.stderr is not None:
-                    err_new.append(f"STDERR:\n{result.stderr}\n")
-                if result.stdout is not None:
-                    err_new.append(f"STDOUT:\n{result.stdout}\n")
+            err_new.append(f"ERROR ({result.returncode})")
+            if result.stderr is not None:
+                err_new.append(f"STDERR:\n{result.stderr}\n")
+            if result.stdout is not None:
+                err_new.append(f"STDOUT:\n{result.stdout}\n")
 
         if err_new:
             rpt_new += err_new
@@ -73,6 +72,7 @@ class GitStatusReport:
         self.rpt_lines += rpt_new
         self.msg_lines += msg_new
         self.err_lines += err_new
+        return None
 
     def get_git_remote(self, repo_path: Path, remote: str):
         UP_TO_DATE = "(up to date)"
@@ -87,24 +87,22 @@ class GitStatusReport:
 
         if result is None:
             err_new.append("ERROR: Failed to run git command.")
+        elif result.returncode == 0:
+            rpt_new.append(result.stdout)
+            if UP_TO_DATE not in result.stdout:
+                msg_new.append(f"Repo '{repo_path}' has changes.")
         else:
-            if result.returncode == 0:
-                rpt_new.append(result.stdout)
-                if UP_TO_DATE not in result.stdout:
-                    msg_new.append(f"Repo '{repo_path}' has changes.")
-            else:
-                err_new.append(f"ERROR ({result.returncode})")
-                if result.stderr is not None:
-                    err_new.append(f"STDERR:\n{result.stderr}\n")
-                if result.stdout is not None:
-                    err_new.append(f"STDOUT:\n{result.stdout}\n")
+            err_new.append(f"ERROR ({result.returncode})")
+            if result.stderr is not None:
+                err_new.append(f"STDERR:\n{result.stderr}\n")
+            if result.stdout is not None:
+                err_new.append(f"STDOUT:\n{result.stdout}\n")
 
         if err_new:
             rpt_new += err_new
             err_new.insert(
                 0,
-                "ERRORS in 'get_git_remote' for "
-                + f"'{repo_path}' remote '{remote}'.",
+                f"ERRORS in 'get_git_remote' for '{repo_path}' remote '{remote}'.",
             )
 
         self.rpt_lines += rpt_new
@@ -124,17 +122,16 @@ class GitStatusReport:
 
         if result is None:
             err_new.append("ERROR: Failed to run git command.")
+        elif result.returncode == 0:
+            remotes = [s for s in result.stdout.split("\n") if s]
+            for remote in remotes:
+                self.get_git_remote(git_path, remote)
         else:
-            if result.returncode == 0:
-                remotes = [s for s in result.stdout.split("\n") if s]
-                for remote in remotes:
-                    self.get_git_remote(git_path, remote)
-            else:
-                err_new.append(f"ERROR ({result.returncode})")
-                if result.stderr is not None:
-                    err_new.append(f"STDERR:\n{result.stderr}\n")
-                if result.stdout is not None:
-                    err_new.append(f"STDOUT:\n{result.stdout}\n")
+            err_new.append(f"ERROR ({result.returncode})")
+            if result.stderr is not None:
+                err_new.append(f"STDERR:\n{result.stderr}\n")
+            if result.stdout is not None:
+                err_new.append(f"STDOUT:\n{result.stdout}\n")
 
         if err_new:
             rpt_new += err_new
@@ -148,7 +145,7 @@ class GitStatusReport:
 
 
 def run_git(run_dir, args) -> subprocess.CompletedProcess:
-    assert isinstance(args, list)
+    assert isinstance(args, list)  # noqa: S101
 
     git_exe = shutil.which("git")
 
@@ -161,11 +158,12 @@ def run_git(run_dir, args) -> subprocess.CompletedProcess:
     cmds = [git_exe] + args
 
     result = subprocess.run(
-        cmds,
+        cmds,  # noqa: S603
         cwd=str(run_dir),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=True,
+        check=False,
     )
 
     if do_print_git_output:
@@ -178,7 +176,7 @@ def run_git(run_dir, args) -> subprocess.CompletedProcess:
     return result
 
 
-def get_args(argv):
+def get_args(arglist=None):
     ap = argparse.ArgumentParser(
         description="Create a simple status report for Git repositories "
         "under a given path."
@@ -206,7 +204,7 @@ def get_args(argv):
         help="Add a timestamp (date_time) tag to the output file name.",
     )
 
-    args = ap.parse_args(argv[1:])
+    args = ap.parse_args(arglist)
 
     if args.dir_name is None:
         dir_path = Path.cwd()
@@ -223,9 +221,7 @@ def get_args(argv):
         out_path = Path(args.file_name).expanduser().resolve()
 
     if not out_path.parent.exists():
-        sys.stderr.write(
-            f"ERROR - Cannot find output directory: '{out_path.parent}'\n"
-        )
+        sys.stderr.write(f"ERROR - Cannot find output directory: '{out_path.parent}'\n")
         sys.exit(1)
 
     if args.dt_tag:
@@ -251,15 +247,13 @@ def process_repos(dir_path: Path) -> GitStatusReport:
 
         dt = run_dt.strftime("%Y-%m-%d %H:%M:%S")
         rpt.rpt_lines.append(f"\n{'-' * 70}")
-        rpt.rpt_lines.append(
-            f"Created {dt} by {app_name} version {app_version}."
-        )
+        rpt.rpt_lines.append(f"Created {dt} by {app_name} version {app_version}.")
 
     return rpt
 
 
-def main(argv):
-    dir_path, out_path = get_args(argv)
+def main(arglist=None):
+    dir_path, out_path = get_args(arglist)
 
     rpt = process_repos(dir_path)
 
@@ -275,7 +269,7 @@ def main(argv):
 
     if rpt.repos_found:
         print(f"\nWriting '{out_path}'.")
-        with open(out_path, "w") as f:
+        with out_path.open("w") as f:
             if s:
                 f.write(s)
             if t:
@@ -288,4 +282,4 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+    main()
